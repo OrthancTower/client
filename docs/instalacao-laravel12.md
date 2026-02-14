@@ -13,8 +13,8 @@
 
 ## Instalação via Git Privado (recomendado)
 - Configure repositório “vcs” apontando para a URL do Git privado.
-- Requeira o pacote como “dev-main” (branch main).
-- Se preferir versão semântica de desenvolvimento, use “^1.0@dev” (aproveitando o branch-alias).
+- Requeira o pacote como versão estável usando a tag publicada (ex.: “^0.0.1”).
+- Alternativa: se instalar pela branch de desenvolvimento, use “dev-main”.
 
 ## Instalação via Caminho Local (desenvolvimento)
 - Use repositório “path” para apontar para a pasta local do pacote e requerer “*@dev” ou “^1.0” (quando houver version/alias).
