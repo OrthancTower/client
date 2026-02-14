@@ -21,7 +21,8 @@ composer require orthanctower/client
 ```
 
 Nota (repositório privado):
-- Se o pacote estiver em um Git privado, adicione o repositório VCS no composer.json do seu app e instale usando “dev-main” (branch main). Veja [instalacao-quickstart-vcs-main.md](file:///Users/rodrigocarvalho/Dev/_projects/orthanc-tower/orthanc-client/docs/instalacao-quickstart-vcs-main.md).
+
+- Se o pacote estiver em um Git privado, adicione o repositório VCS no composer.json do seu app e instale usando “dev-main” (branch main). Veja [instalacao-quickstart-vcs-main.md](docs/instalacao-quickstart-vcs-main.md).
 
 ### 2. Publish Configuration
 
@@ -359,10 +360,10 @@ ORTHANC_QUEUE_ENABLED=false
 
 ## License
 
-Proprietary - Internal use only
+MIT License
 
 ## Support
 
-For issues or questions, contact your Orthanc server administrator.
+Open an issue: https://github.com/OrthancTower/client/issues
 
 # client
