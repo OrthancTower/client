@@ -23,6 +23,11 @@
       "OrthancTower\\Client\\": "src/"
     }
   },
+  "autoload-dev": {
+    "psr-4": {
+      "OrthancTower\\Client\\Tests\\": "tests/"
+    }
+  },
   "extra": {
     "branch-alias": {
       "dev-main": "1.0-dev"

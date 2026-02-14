@@ -17,7 +17,7 @@ Lightweight HTTP client for sending notifications to Orthanc server.
 ### 1. Install via Composer
 
 ```bash
-composer require orthanc-tower/client
+composer require orthanctower/client
 ```
 
 ### 2. Publish Configuration

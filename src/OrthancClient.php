@@ -167,6 +167,7 @@ class OrthancClient
 
         $attempt = 0;
         $lastError = null;
+        $nonRetriable = false;
 
         while (true) {
             try {
@@ -196,12 +197,17 @@ class OrthancClient
                 $status = $response->status();
                 // Don't retry client errors except 429 (rate limit)
                 if ($status >= 400 && $status < 500 && $status !== 429) {
-                    throw new \RuntimeException("Orthanc server returned {$status}: {$response->body()}");
+                    $nonRetriable = true;
+                    $lastError = new \RuntimeException("Orthanc server returned {$status}: {$response->body()}");
+                } else {
+                    $lastError = new \RuntimeException("Orthanc server returned {$status}: {$response->body()}");
                 }
-
-                $lastError = new \RuntimeException("Orthanc server returned {$status}: {$response->body()}");
             } catch (\Throwable $e) {
                 $lastError = $e;
+            }
+
+            if ($nonRetriable) {
+                throw $lastError ?? new \RuntimeException('Orthanc request failed');
             }
 
             if (! $enabled || $attempt >= ($times - 1)) {
