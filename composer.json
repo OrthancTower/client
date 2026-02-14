@@ -8,10 +8,14 @@
     "notifications",
     "orthanc",
     "monitoring",
-    "client",
-    "private"
+    "client"
   ],
-  "authors": [],
+  "authors": [
+    {
+      "name": "OrthancTower",
+      "homepage": "https://github.com/OrthancTower"
+    }
+  ],
   "require": {
     "php": "^8.2|^8.3",
     "illuminate/support": "^12.0",
@@ -29,6 +33,10 @@
     }
   },
   "extra": {
+    "support": {
+      "issues": "https://github.com/OrthancTower/client/issues",
+      "source": "https://github.com/OrthancTower/client"
+    },
     "branch-alias": {
       "dev-main": "1.0-dev"
     },

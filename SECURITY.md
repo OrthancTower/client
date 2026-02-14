@@ -4,7 +4,7 @@
 - Laravel 12.x / PHP 8.2+.
 
 ## Reporting a Vulnerability
-- Contate o administrador do Orthanc server interno.
+- Abra uma issue com etiqueta "security" no repositório (ou envie por contato privado da organização).
 - Evite incluir PII; forneça passos de reprodução, versão e logs mínimos.
 
 ## Data Protection

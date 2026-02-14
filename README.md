@@ -359,8 +359,7 @@ ORTHANC_QUEUE_ENABLED=false
 - Laravel 12.x
 
 ## License
-
-MIT License
+Proprietary (OrthancTower Client Proprietary License)
 
 ## Support
 
