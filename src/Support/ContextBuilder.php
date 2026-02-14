@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace G80st\OrthancClient\Support;
+namespace OrthancTower\Client\Support;
 
 class ContextBuilder
 {
@@ -13,14 +13,12 @@ class ContextBuilder
     {
         $config = config('orthanc-client.context', []);
 
-        // App information
         $context['app'] = [
             'name' => $config['app_name'] ?? config('app.name'),
             'environment' => $config['environment'] ?? app()->environment(),
             'url' => $config['app_url'] ?? config('app.url'),
         ];
 
-        // Request context
         if ($request = request()) {
             if ($config['include_route'] ?? true) {
                 $context['route'] = $request->method().' '.$request->path();
@@ -35,18 +33,21 @@ class ContextBuilder
             }
         }
 
-        // User context
         if (($config['include_user'] ?? true) && auth()->check()) {
             $user = auth()->user();
             $context['user'] = [
                 'id' => $user->id,
-                'email' => $user->email ?? null,
-                'name' => $user->name ?? null,
+                'email' => ($config['include_email'] ?? true) ? ($user->email ?? null) : null,
+                'name' => ($config['include_name'] ?? true) ? ($user->name ?? null) : null,
             ];
         }
 
-        // Timestamp
         $context['timestamp'] = now()->toIso8601String();
+
+        $sanitize = $config['sanitize_fields'] ?? [];
+        if (! empty($sanitize)) {
+            $context = $this->sanitize($context, $sanitize);
+        }
 
         return $context;
     }
@@ -81,7 +82,6 @@ class ContextBuilder
     {
         $criticalExceptions = [
             \PDOException::class,
-            \Illuminate\Database\QueryException::class,
             \RuntimeException::class,
             \ErrorException::class,
         ];
@@ -111,5 +111,32 @@ class ContextBuilder
                 ];
             })
             ->toArray();
+    }
+
+    protected function sanitize(array $context, array $paths): array
+    {
+        foreach ($paths as $path) {
+            $segments = explode('.', $path);
+            $context = $this->setByPath($context, $segments, '[REDACTED]');
+        }
+
+        return $context;
+    }
+
+    protected function setByPath(array $data, array $segments, $value): array
+    {
+        $ref = &$data;
+        foreach ($segments as $segment) {
+            if (! is_array($ref)) {
+                return $data;
+            }
+            if (! array_key_exists($segment, $ref)) {
+                return $data;
+            }
+            $ref = &$ref[$segment];
+        }
+        $ref = $value;
+
+        return $data;
     }
 }

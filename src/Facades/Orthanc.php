@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace G80st\OrthancClient\Facades;
+namespace OrthancTower\Client\Facades;
 
 use Illuminate\Support\Facades\Facade;
 
@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static bool testConnection()
  * @method static array getChannels()
  *
- * @see \G80st\OrthancClient\OrthancClient
+ * @see \OrthancTower\Client\OrthancClient
  */
 class Orthanc extends Facade
 {

@@ -1,18 +1,9 @@
 # Changelog
 
-All notable changes to `orthanc-client` will be documented in this file.
-
-## 1.0.0 - 2026-02-13
-
-### Added
-- Initial release
-- HTTP client for Orthanc server
-- Automatic exception reporting
-- Context builder (auto-includes app, user, IP, route)
-- Retry mechanism with exponential backoff
-- Queue support for async notifications
-- Fallback logging when server is unreachable
-- Commands: `orthanc:test-connection`, `orthanc:status`
-- Multiple notification levels (critical, error, warning, info, success, debug)
-- Configuration for ignoring specific exceptions
-- Comprehensive documentation
+## Unreleased
+- Retry com backoff+jitter e suporte a Retry-After.
+- Sanitização de contexto com `sanitize_fields` e flags `include_email/include_name`.
+- Segurança no CLI: máscara de token por padrão; `--show-token-partial` opcional.
+- Centralização de classificação/canais de exceções em config.
+- Contrato público `OrthancClientContract`.
+- Testes unit/feature (retry, Retry-After, sanitização, comandos).

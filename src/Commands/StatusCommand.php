@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace G80st\OrthancClient\Commands;
+namespace OrthancTower\Client\Commands;
 
 use Illuminate\Console\Command;
 

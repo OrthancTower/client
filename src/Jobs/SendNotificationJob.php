@@ -2,14 +2,16 @@
 
 declare(strict_types=1);
 
-namespace G80st\OrthancClient\Jobs;
+namespace OrthancTower\Client\Jobs;
 
-use G80st\OrthancClient\Facades\Orthanc;
+use OrthancTower\Client\Facades\Orthanc;
+
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class SendNotificationJob implements ShouldQueue
 {
@@ -33,7 +35,7 @@ class SendNotificationJob implements ShouldQueue
 
     public function failed(\Throwable $exception): void
     {
-        \Log::error('Orthanc client: Failed to send notification after all retries', [
+        Log::error('Orthanc client: Failed to send notification after all retries', [
             'payload' => $this->payload,
             'exception' => $exception->getMessage(),
         ]);

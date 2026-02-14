@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace G80st\OrthancClient;
+namespace OrthancTower\Client;
 
-use G80st\OrthancClient\Commands\StatusCommand;
-use G80st\OrthancClient\Commands\TestConnectionCommand;
+use OrthancTower\Client\Commands\StatusCommand;
+use OrthancTower\Client\Commands\TestConnectionCommand;
+use OrthancTower\Client\Contracts\OrthancClientContract;
 use Illuminate\Support\ServiceProvider;
 
 class OrthancClientServiceProvider extends ServiceProvider
@@ -23,8 +24,8 @@ class OrthancClientServiceProvider extends ServiceProvider
         $this->app->singleton('orthanc-client', function ($app) {
             return new OrthancClient();
         });
-
         $this->app->alias('orthanc-client', OrthancClient::class);
+        $this->app->alias('orthanc-client', OrthancClientContract::class);
     }
 
     /**

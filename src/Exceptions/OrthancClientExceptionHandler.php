@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace G80st\OrthancClient\Exceptions;
+namespace OrthancTower\Client\Exceptions;
 
-use G80st\OrthancClient\Facades\Orthanc;
-use G80st\OrthancClient\Support\ContextBuilder;
+use OrthancTower\Client\Facades\Orthanc;
+use OrthancTower\Client\Support\ContextBuilder;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Throwable;
 
@@ -87,23 +87,14 @@ class OrthancClientExceptionHandler extends ExceptionHandler
      */
     protected function getExceptionLevel(Throwable $exception): string
     {
-        $criticalExceptions = [
-            \PDOException::class,
-            \Illuminate\Database\QueryException::class,
-            \RuntimeException::class,
-        ];
-
+        $criticalExceptions = config('orthanc-client.exceptions.critical', []);
         foreach ($criticalExceptions as $class) {
             if ($exception instanceof $class) {
                 return 'critical';
             }
         }
 
-        $warningExceptions = [
-            \Illuminate\Validation\ValidationException::class,
-            \Illuminate\Database\Eloquent\ModelNotFoundException::class,
-        ];
-
+        $warningExceptions = config('orthanc-client.exceptions.warning', []);
         foreach ($warningExceptions as $class) {
             if ($exception instanceof $class) {
                 return 'warning';
@@ -118,24 +109,18 @@ class OrthancClientExceptionHandler extends ExceptionHandler
      */
     protected function getExceptionChannel(Throwable $exception): string
     {
-        // Critical exceptions
+        $channels = config('orthanc-client.exception_channels', []);
         if ($this->getExceptionLevel($exception) === 'critical') {
-            return 'critical-errors';
+            return $channels['critical'] ?? 'critical-errors';
         }
 
-        // Security exceptions
-        $securityExceptions = [
-            \Illuminate\Auth\Access\AuthorizationException::class,
-            \Illuminate\Auth\AuthenticationException::class,
-        ];
-
+        $securityExceptions = config('orthanc-client.exceptions.security', []);
         foreach ($securityExceptions as $class) {
             if ($exception instanceof $class) {
-                return 'sting-alerts';
+                return $channels['security'] ?? 'sting-alerts';
             }
         }
 
-        // Default
-        return 'critical-errors';
+        return $channels['default'] ?? 'critical-errors';
     }
 }

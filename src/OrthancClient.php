@@ -2,15 +2,16 @@
 
 declare(strict_types=1);
 
-namespace G80st\OrthancClient;
+namespace OrthancTower\Client;
 
-use G80st\OrthancClient\Support\ContextBuilder;
+use OrthancTower\Client\Support\ContextBuilder;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class OrthancClient
 {
     protected ContextBuilder $contextBuilder;
+    protected $sleeper = null;
 
     public function __construct()
     {
@@ -38,7 +39,7 @@ class OrthancClient
 
         // Queue or send immediately
         if (config('orthanc-client.queue.enabled', false)) {
-            dispatch(new \G80st\OrthancClient\Jobs\SendNotificationJob($payload));
+            dispatch(new \OrthancTower\Client\Jobs\SendNotificationJob($payload));
 
             return true;
         }
@@ -116,7 +117,16 @@ class OrthancClient
         try {
             $response = $this->makeRequest('/api/v1/health', [], 'GET');
 
-            return $response['status'] === 'ok';
+            if (! is_array($response)) {
+                return false;
+            }
+            if (($response['status'] ?? null) === 'ok') {
+                return true;
+            }
+            if (($response['success'] ?? null) === true) {
+                return true;
+            }
+            return false;
         } catch (\Throwable $e) {
             return false;
         }
@@ -130,7 +140,8 @@ class OrthancClient
         try {
             $response = $this->makeRequest('/api/v1/channels', [], 'GET');
 
-            return $response['channels'] ?? [];
+            $channels = $response['channels'] ?? $response['data'] ?? [];
+            return is_array($channels) ? $channels : [];
         } catch (\Throwable $e) {
             return [];
         }
@@ -148,29 +159,92 @@ class OrthancClient
             throw new \RuntimeException('Orthanc API token not configured');
         }
 
-        $request = Http::withToken($token)
-            ->timeout(config('orthanc-client.timeout', 10))
-            ->acceptJson();
+        $times = (int) config('orthanc-client.retry.times', 3);
+        $enabled = (bool) config('orthanc-client.retry.enabled', true);
+        $base = (int) config('orthanc-client.retry.base_ms', 100);
+        $cap = (int) config('orthanc-client.retry.cap_ms', 2000);
+        $jitter = (string) config('orthanc-client.retry.jitter', 'full');
 
-        // Retry configuration
-        if (config('orthanc-client.retry.enabled', true)) {
-            $request->retry(
-                config('orthanc-client.retry.times', 3),
-                config('orthanc-client.retry.sleep', 100)
-            );
+        $attempt = 0;
+        $lastError = null;
+
+        while (true) {
+            try {
+                $headers = [];
+                if (config('orthanc-client.idempotency.enabled', false)) {
+                    $keyBase = json_encode([
+                        'endpoint' => $endpoint,
+                        'method' => $method,
+                        'payload' => $data,
+                    ]);
+                    $headers['X-Idempotency-Key'] = hash('sha256', (string) $keyBase);
+                }
+
+                $req = Http::withToken($token)
+                    ->withHeaders($headers)
+                    ->timeout(config('orthanc-client.timeout', 10))
+                    ->acceptJson();
+
+                $response = $method === 'GET'
+                    ? $req->get($url, $data)
+                    : $req->post($url, $data);
+
+                if ($response->successful()) {
+                    return $response->json();
+                }
+
+                $status = $response->status();
+                // Don't retry client errors except 429 (rate limit)
+                if ($status >= 400 && $status < 500 && $status !== 429) {
+                    throw new \RuntimeException("Orthanc server returned {$status}: {$response->body()}");
+                }
+
+                $lastError = new \RuntimeException("Orthanc server returned {$status}: {$response->body()}");
+            } catch (\Throwable $e) {
+                $lastError = $e;
+            }
+
+            if (! $enabled || $attempt >= ($times - 1)) {
+                throw $lastError ?? new \RuntimeException('Orthanc request failed');
+            }
+
+            $delay = $this->computeBackoffMs($attempt, $base, $cap, $jitter);
+            if (isset($response) && in_array($response->status(), [429, 503], true)) {
+                $retryAfter = $response->header('Retry-After');
+                if (is_string($retryAfter) && ctype_digit($retryAfter)) {
+                    $delay = (int) $retryAfter * 1000;
+                }
+            }
+            $this->sleepMs($delay);
+            $attempt++;
         }
+    }
 
-        $response = $method === 'GET'
-            ? $request->get($url, $data)
-            : $request->post($url, $data);
-
-        if (! $response->successful()) {
-            throw new \RuntimeException(
-                "Orthanc server returned {$response->status()}: {$response->body()}"
-            );
+    protected function computeBackoffMs(int $attempt, int $baseMs, int $capMs, string $jitter): int
+    {
+        $exp = (int) min($capMs, $baseMs * (2 ** $attempt));
+        if ($jitter === 'equal') {
+            return intdiv($exp, 2) + random_int(0, max(1, intdiv($exp, 2)));
         }
+        if ($jitter === 'full') {
+            return random_int(0, max(1, $exp));
+        }
+        return max(1, $exp);
+    }
 
-        return $response->json();
+    protected function sleepMs(int $ms): void
+    {
+        $fn = $this->sleeper;
+        if (is_callable($fn)) {
+            $fn(max(0, $ms));
+            return;
+        }
+        usleep(max(0, $ms) * 1000);
+    }
+
+    public function setSleeper(callable $sleeper): void
+    {
+        $this->sleeper = $sleeper;
     }
 
     /**

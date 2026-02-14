@@ -17,7 +17,7 @@ Lightweight HTTP client for sending notifications to Orthanc server.
 ### 1. Install via Composer
 
 ```bash
-composer require g80st/orthanc-client
+composer require orthanc-tower/client
 ```
 
 ### 2. Publish Configuration
@@ -46,7 +46,7 @@ ORTHANC_QUEUE_ENABLED=false
 // app/Exceptions/Handler.php
 namespace App\Exceptions;
 
-use G80st\OrthancClient\Exceptions\OrthancClientExceptionHandler;
+use OrthancTower\Client\Exceptions\OrthancClientExceptionHandler;
 
 class Handler extends OrthancClientExceptionHandler
 {
@@ -54,12 +54,23 @@ class Handler extends OrthancClientExceptionHandler
 }
 ```
 
+### Guia Completo: Exception Handler
+
+- Estenda `OrthancClientExceptionHandler` para habilitar auto‑reporte.
+- Configure no `config/orthanc-client.php`:
+  - `auto_report_exceptions` para ativar/desativar.
+  - `ignore_exceptions` para classes a serem ignoradas.
+- Boas práticas:
+  - Não lance exceções na rotina de reporte; falhas são logadas localmente.
+  - Use canais distintos para segurança e críticos (ex.: `sting-alerts`, `critical-errors`).
+  - Sanitização: use `sanitize_fields` para remover PII do contexto.
+
 ## Usage
 
 ### Basic Notifications
 
 ```php
-use G80st\OrthancClient\Facades\Orthanc;
+use OrthancTower\Client\Facades\Orthanc;
 
 // Critical
 Orthanc::critical('gondor-alerts', 'Database connection lost!');
@@ -102,7 +113,7 @@ try {
         'exception' => $e,
         'custom_data' => 'value',
     ]);
-    
+
     throw $e;
 }
 ```
@@ -127,6 +138,11 @@ Orthanc::critical('gondor-alerts', 'High CPU usage', [
 php artisan orthanc:test-connection
 ```
 
+Token no CLI:
+
+- Por padrão, o comando não exibe o token (mostra “✅ Configured”).
+- Para exibir parcialmente: `php artisan orthanc:test-connection --show-token-partial`
+
 ### View Status
 
 ```bash
@@ -144,9 +160,15 @@ Control what context is automatically included:
 'context' => [
     'app_name' => env('APP_NAME', 'Laravel App'),
     'include_user' => true,      // Include authenticated user
+    'include_email' => true,      // Include user email in context
+    'include_name' => true,       // Include user name in context
     'include_ip' => true,         // Include client IP
     'include_route' => true,      // Include route/path
     'include_user_agent' => false, // Include user agent
+    'sanitize_fields' => [         // Paths to redact from context
+        // 'app.name',
+        // 'user.email',
+    ],
 ],
 ```
 
@@ -155,10 +177,23 @@ Control what context is automatically included:
 ```php
 'retry' => [
     'enabled' => true,
-    'times' => 3,        // Retry 3 times
-    'sleep' => 100,      // Wait 100ms between retries
+    'times' => 3,            // número máximo de tentativas
+    'sleep' => 100,          // legado (ms); prefira base_ms/cap_ms/jitter
+    'base_ms' => 100,        // atraso base em ms
+    'cap_ms' => 2000,        // teto máximo de atraso em ms
+    'jitter' => 'full',      // none|equal|full (recomendado: full)
 ],
 ```
+
+#### Estratégia de Backoff com Jitter
+
+- none: atraso determinístico (base\*2^tentativa)
+- equal: metade determinística + metade aleatória
+- full: totalmente aleatório até o teto da tentativa (recomendado para evitar “thundering herd”)
+
+#### Retry-After
+
+- Em respostas 429/503, se o servidor enviar cabeçalho `Retry-After` (segundos), o cliente usa esse valor como atraso antes da próxima tentativa.
 
 ### Queue
 
@@ -182,6 +217,14 @@ Then run queue worker:
 php artisan queue:work --queue=orthanc-client
 ```
 
+#### Guia Completo: Fila (Melhores Práticas)
+
+- Habilite `ORTHANC_QUEUE_ENABLED=true` em produção para não bloquear requisições.
+- Configure `tries`/`timeout` do worker conforme SLA (ex.: `php artisan queue:work --tries=3 --timeout=30`).
+- Separe a fila `orthanc-client` para isolar falhas e monitorar consumo.
+- Defina `connection` adequada (ex.: `redis`) e health check no seu sistema de observabilidade.
+- Use `fallback.log=true` para garantir trilha local quando o servidor estiver indisponível.
+
 ### Fallback
 
 ```php
@@ -200,6 +243,16 @@ Don't send certain exceptions to server:
     Symfony\Component\HttpKernel\Exception\NotFoundHttpException::class,
 ],
 ```
+
+## Testes
+
+- Dependências de desenvolvimento:
+  - `orchestra/testbench` (Laravel 12 → Testbench 10.x)
+  - `phpunit/phpunit`
+- Executar:
+  ```bash
+  composer test
+  ```
 
 ## API Methods
 
@@ -308,4 +361,5 @@ Proprietary - Internal use only
 ## Support
 
 For issues or questions, contact your Orthanc server administrator.
+
 # client

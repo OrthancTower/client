@@ -49,7 +49,10 @@ return [
     'retry' => [
         'enabled' => true,
         'times' => 3,
-        'sleep' => 100, // milliseconds
+        'sleep' => 100, // milliseconds (legacy; use base_ms/cap_ms/jitter para nova estratégia)
+        'base_ms' => 100, // atraso base em ms para backoff
+        'cap_ms' => 2000, // teto máximo de atraso em ms
+        'jitter' => 'full', // none|equal|full
     ],
 
     /*
@@ -95,9 +98,13 @@ return [
         'app_url' => env('APP_URL'),
         'environment' => env('APP_ENV', 'production'),
         'include_user' => true,
+        'include_email' => true,
+        'include_name' => true,
         'include_ip' => true,
         'include_route' => true,
         'include_user_agent' => false,
+        'sanitize_fields' => [
+        ],
     ],
 
     /*
@@ -124,4 +131,43 @@ return [
         // Symfony\Component\HttpKernel\Exception\NotFoundHttpException::class,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Exception Classification
+    |--------------------------------------------------------------------------
+    */
+    'exceptions' => [
+        'critical' => [
+            \PDOException::class,
+            \RuntimeException::class,
+        ],
+        'warning' => [
+            \Illuminate\Validation\ValidationException::class,
+            \Illuminate\Database\Eloquent\ModelNotFoundException::class,
+        ],
+        'security' => [
+            \Illuminate\Auth\Access\AuthorizationException::class,
+            \Illuminate\Auth\AuthenticationException::class,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Exception Channels
+    |--------------------------------------------------------------------------
+    */
+    'exception_channels' => [
+        'critical' => 'critical-errors',
+        'security' => 'sting-alerts',
+        'default' => 'critical-errors',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Idempotency
+    |--------------------------------------------------------------------------
+    */
+    'idempotency' => [
+        'enabled' => false,
+    ],
 ];
