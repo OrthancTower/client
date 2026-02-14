@@ -20,6 +20,9 @@ Lightweight HTTP client for sending notifications to Orthanc server.
 composer require orthanctower/client
 ```
 
+Nota (repositório privado):
+- Se o pacote estiver em um Git privado, adicione o repositório VCS no composer.json do seu app e instale usando “dev-main” (branch main). Veja [instalacao-quickstart-vcs-main.md](file:///Users/rodrigocarvalho/Dev/_projects/orthanc-tower/orthanc-client/docs/instalacao-quickstart-vcs-main.md).
+
 ### 2. Publish Configuration
 
 ```bash
