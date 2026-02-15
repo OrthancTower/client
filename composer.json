@@ -60,6 +60,11 @@
       "aliases": {
         "Orthanc": "OrthancTower\\Client\\Facades\\Orthanc"
       }
+    },
+    "config": {
+      "publish": {
+        "orthanc-config": "config/orthanc-client.php"
+      }
     }
   },
   "minimum-stability": "dev",

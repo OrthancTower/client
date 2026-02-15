@@ -1,69 +1,59 @@
 <?php
 
+declare(strict_types=1);
+
 return [
 
     /*
     |--------------------------------------------------------------------------
     | Orthanc Client Enabled
     |--------------------------------------------------------------------------
-    |
-    | Enable or disable Orthanc client globally.
-    |
     */
-
     'enabled' => env('ORTHANC_ENABLED', true),
 
     /*
     |--------------------------------------------------------------------------
     | API Configuration
     |--------------------------------------------------------------------------
-    |
-    | Orthanc server API URL and authentication token.
+    */
+    'api_url' => env('ORTHANC_API_URL'),
+    'api_token' => env('ORTHANC_API_TOKEN'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Default Channel
+    |--------------------------------------------------------------------------
+    | Default channel when none specified. Must exist in server config.
     |
     */
-
-    'api_url' => env('ORTHANC_API_URL'),
-
-    'api_token' => env('ORTHANC_API_TOKEN'),
+    'default_channel' => env('ORTHANC_DEFAULT_CHANNEL', 'system-config'),
 
     /*
     |--------------------------------------------------------------------------
     | Timeout Configuration
     |--------------------------------------------------------------------------
-    |
-    | HTTP request timeout in seconds.
-    |
     */
-
     'timeout' => env('ORTHANC_TIMEOUT', 10),
 
     /*
     |--------------------------------------------------------------------------
     | Retry Configuration
     |--------------------------------------------------------------------------
-    |
-    | Retry failed requests automatically.
-    |
     */
-
     'retry' => [
         'enabled' => true,
         'times' => 3,
-        'sleep' => 100, // milliseconds (legacy; use base_ms/cap_ms/jitter para nova estratégia)
-        'base_ms' => 100, // atraso base em ms para backoff
-        'cap_ms' => 2000, // teto máximo de atraso em ms
-        'jitter' => 'full', // none|equal|full
+        'sleep' => 100,
+        'base_ms' => 100,
+        'cap_ms' => 2000,
+        'jitter' => 'full',
     ],
 
     /*
     |--------------------------------------------------------------------------
     | Queue Configuration
     |--------------------------------------------------------------------------
-    |
-    | Queue notifications to avoid blocking requests.
-    |
     */
-
     'queue' => [
         'enabled' => env('ORTHANC_QUEUE_ENABLED', false),
         'connection' => env('ORTHANC_QUEUE_CONNECTION', 'redis'),
@@ -74,25 +64,17 @@ return [
     |--------------------------------------------------------------------------
     | Fallback Configuration
     |--------------------------------------------------------------------------
-    |
-    | What to do when server is unreachable.
-    |
     */
-
     'fallback' => [
-        'log' => true, // Always log to Laravel log
-        'throw_on_failure' => false, // Don't throw exceptions on failure
+        'log' => true,
+        'throw_on_failure' => false,
     ],
 
     /*
     |--------------------------------------------------------------------------
     | Context Configuration
     |--------------------------------------------------------------------------
-    |
-    | Automatically include context in notifications.
-    |
     */
-
     'context' => [
         'app_name' => env('APP_NAME', 'Laravel App'),
         'app_url' => env('APP_URL'),
@@ -103,77 +85,35 @@ return [
         'include_ip' => true,
         'include_route' => true,
         'include_user_agent' => false,
-        'sanitize_fields' => [
-        ],
+        'sanitize_fields' => [],
     ],
 
     /*
     |--------------------------------------------------------------------------
     | Exception Handling
     |--------------------------------------------------------------------------
-    |
-    | Automatically send exceptions to Orthanc server.
-    |
     */
-
     'auto_report_exceptions' => true,
+    'override_exception_handler' => env('ORTHANC_CLIENT_OVERRIDE_HANDLER', false),
 
     /*
     |--------------------------------------------------------------------------
-    | Override Laravel Exception Handler
+    | Exception Channels (mapeamento por severidade)
     |--------------------------------------------------------------------------
-    |
-    | When enabled, the package will bind its own exception handler
-    | (OrthancClientExceptionHandler) to automatically report exceptions
-    | without requiring changes to App\Exceptions\Handler.
-    | Disable if your application implements a custom Handler you must keep.
-    |
     */
-    'override_exception_handler' => env('ORTHANC_CLIENT_OVERRIDE_HANDLER', false),
+    'exception_channels' => [
+        'critical' => env('ORTHANC_CRITICAL_CHANNEL', 'system-config'),
+        'security' => env('ORTHANC_SECURITY_CHANNEL', 'sting-alerts'),
+        'warning' => env('ORTHANC_WARNING_CHANNEL', 'warnings'),
+        'default' => env('ORTHANC_DEFAULT_CHANNEL', 'system-config'),
+    ],
 
     /*
     |--------------------------------------------------------------------------
     | Ignored Exceptions
     |--------------------------------------------------------------------------
-    |
-    | Don't send these exceptions to server.
-    |
     */
-
-    'ignore_exceptions' => [
-        // Symfony\Component\HttpKernel\Exception\NotFoundHttpException::class,
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Exception Classification
-    |--------------------------------------------------------------------------
-    */
-    'exceptions' => [
-        'critical' => [
-            \PDOException::class,
-            \RuntimeException::class,
-        ],
-        'warning' => [
-            \Illuminate\Validation\ValidationException::class,
-            \Illuminate\Database\Eloquent\ModelNotFoundException::class,
-        ],
-        'security' => [
-            \Illuminate\Auth\Access\AuthorizationException::class,
-            \Illuminate\Auth\AuthenticationException::class,
-        ],
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Exception Channels
-    |--------------------------------------------------------------------------
-    */
-    'exception_channels' => [
-        'critical' => 'critical-errors',
-        'security' => 'sting-alerts',
-        'default' => 'critical-errors',
-    ],
+    'ignore_exceptions' => [],
 
     /*
     |--------------------------------------------------------------------------
