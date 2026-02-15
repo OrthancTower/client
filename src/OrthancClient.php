@@ -24,7 +24,21 @@ class OrthancClient
      */
     public function notify(string $channel, string $level, string $message, array $context = []): bool
     {
+        // LOG: Verificar se está habilitado
+        Log::debug('Orthanc Client: notify() called', [
+            'channel' => $channel,
+            'level' => $level,
+            'message' => substr($message, 0, 100),
+            'is_enabled' => $this->isEnabled(),
+        ]);
+
         if (! $this->isEnabled()) {
+            Log::warning('Orthanc Client: disabled or misconfigured', [
+                'enabled' => config('orthanc-client.enabled', true),
+                'has_url' => ! empty(config('orthanc-client.api_url')),
+                'has_token' => ! empty(config('orthanc-client.api_token')),
+            ]);
+
             return false;
         }
 
@@ -38,12 +52,21 @@ class OrthancClient
             'context' => $context,
         ];
 
+        // LOG: Verificar se vai enfileirar
+        $queueEnabled = config('orthanc-client.queue.enabled', false);
+        Log::info('Orthanc Client: queue check', [
+            'queue_enabled' => $queueEnabled,
+        ]);
+
         // Queue or send immediately
-        if (config('orthanc-client.queue.enabled', false)) {
+        if ($queueEnabled) {
+            Log::info('Orthanc Client: dispatching to queue');
             dispatch(new \OrthancTower\Client\Jobs\SendNotificationJob($payload));
 
             return true;
         }
+
+        Log::info('Orthanc Client: sending immediately');
 
         return $this->sendNow($payload);
     }
@@ -53,11 +76,26 @@ class OrthancClient
      */
     public function sendNow(array $payload): bool
     {
+        Log::info('Orthanc Client: sendNow() called', [
+            'channel' => $payload['channel'] ?? null,
+            'level' => $payload['level'] ?? null,
+        ]);
+
         try {
             $response = $this->makeRequest('/api/notify', $payload);
 
+            Log::info('Orthanc Client: request completed', [
+                'success' => $response['success'] ?? false,
+                'response' => $response,
+            ]);
+
             return $response['success'] ?? false;
         } catch (\Throwable $e) {
+            Log::error('Orthanc Client: sendNow() exception', [
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+            ]);
+
             return $this->handleFailure($e, $payload);
         }
     }
@@ -158,6 +196,13 @@ class OrthancClient
         $url = rtrim(config('orthanc-client.api_url'), '/').$endpoint;
         $token = config('orthanc-client.api_token');
 
+        Log::info('Orthanc Client: makeRequest() starting', [
+            'url' => $url,
+            'method' => $method,
+            'has_token' => ! empty($token),
+            'token_prefix' => $token ? substr($token, 0, 15).'...' : null,
+        ]);
+
         if (! $token) {
             throw new \RuntimeException('Orthanc API token not configured');
         }
@@ -174,6 +219,11 @@ class OrthancClient
 
         while (true) {
             try {
+                Log::debug('Orthanc Client: attempt', [
+                    'attempt' => $attempt + 1,
+                    'max_attempts' => $times,
+                ]);
+
                 $headers = [];
                 if (config('orthanc-client.idempotency.enabled', false)) {
                     $keyBase = json_encode([
@@ -189,9 +239,21 @@ class OrthancClient
                     ->timeout(config('orthanc-client.timeout', 10))
                     ->acceptJson();
 
+                Log::info('Orthanc Client: sending HTTP request', [
+                    'url' => $url,
+                    'headers_count' => count($headers),
+                    'payload_keys' => array_keys($data),
+                ]);
+
                 $response = $method === 'GET'
                     ? $req->get($url, $data)
                     : $req->post($url, $data);
+
+                Log::info('Orthanc Client: HTTP response received', [
+                    'status' => $response->status(),
+                    'successful' => $response->successful(),
+                    'body_preview' => substr($response->body(), 0, 200),
+                ]);
 
                 if ($response->successful()) {
                     return $response->json();
@@ -202,11 +264,22 @@ class OrthancClient
                 if ($status >= 400 && $status < 500 && $status !== 429) {
                     $nonRetriable = true;
                     $lastError = new \RuntimeException("Orthanc server returned {$status}: {$response->body()}");
+                    Log::error('Orthanc Client: non-retriable error', [
+                        'status' => $status,
+                        'body' => $response->body(),
+                    ]);
                 } else {
                     $lastError = new \RuntimeException("Orthanc server returned {$status}: {$response->body()}");
+                    Log::warning('Orthanc Client: retriable error', [
+                        'status' => $status,
+                    ]);
                 }
             } catch (\Throwable $e) {
                 $lastError = $e;
+                Log::error('Orthanc Client: HTTP exception', [
+                    'exception' => get_class($e),
+                    'message' => $e->getMessage(),
+                ]);
             }
 
             if ($nonRetriable) {
@@ -214,6 +287,10 @@ class OrthancClient
             }
 
             if (! $enabled || $attempt >= ($times - 1)) {
+                Log::error('Orthanc Client: max retries reached', [
+                    'attempt' => $attempt,
+                    'max' => $times,
+                ]);
                 throw $lastError ?? new \RuntimeException('Orthanc request failed');
             }
 
@@ -224,6 +301,12 @@ class OrthancClient
                     $delay = (int) $retryAfter * 1000;
                 }
             }
+
+            Log::info('Orthanc Client: retrying', [
+                'delay_ms' => $delay,
+                'next_attempt' => $attempt + 2,
+            ]);
+
             $this->sleepMs($delay);
             $attempt++;
         }
