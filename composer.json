@@ -21,16 +21,18 @@
     "illuminate/support": "^12.0",
     "illuminate/http": "^12.0",
     "guzzlehttp/guzzle": "^7.8",
-    "orthanctower/contracts": "dev-main"
+    "orthanc-tower/contracts": "dev-main"
   },
   "repositories": [
     {
       "type": "vcs",
-      "url": "https://github.com/OrthancTower/contracts"
+      "url": "https://github.com/OrthancTower/contracts",
+      "no-api": true
     },
     {
       "type": "vcs",
-      "url": "https://github.com/OrthancTower/client"
+      "url": "https://github.com/OrthancTower/client",
+      "no-api": true
     }
   ],
   "autoload": {
