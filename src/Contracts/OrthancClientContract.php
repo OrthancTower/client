@@ -4,16 +4,29 @@ declare(strict_types=1);
 
 namespace OrthancTower\Client\Contracts;
 
+use OrthancTower\Contracts\DTO\NotificationPayload;
+use OrthancTower\Contracts\Enums\Channel;
+use OrthancTower\Contracts\Enums\Level;
+
 interface OrthancClientContract
 {
-    public function notify(string $channel, string $level, string $message, array $context = []): bool;
-    public function sendNow(array $payload): bool;
-    public function critical(string $channel, string $message, array $context = []): bool;
-    public function error(string $channel, string $message, array $context = []): bool;
-    public function warning(string $channel, string $message, array $context = []): bool;
-    public function info(string $channel, string $message, array $context = []): bool;
-    public function success(string $channel, string $message, array $context = []): bool;
-    public function debug(string $channel, string $message, array $context = []): bool;
+    public function notify(Channel|string $channel, Level|string $level, string $message, array $context = []): bool;
+
+    public function sendNow(NotificationPayload|array $payload): bool;
+
+    public function critical(Channel|string $channel, string $message, array $context = []): bool;
+
+    public function error(Channel|string $channel, string $message, array $context = []): bool;
+
+    public function warning(Channel|string $channel, string $message, array $context = []): bool;
+
+    public function info(Channel|string $channel, string $message, array $context = []): bool;
+
+    public function success(Channel|string $channel, string $message, array $context = []): bool;
+
+    public function debug(Channel|string $channel, string $message, array $context = []): bool;
+
     public function testConnection(): bool;
+
     public function getChannels(): array;
 }
