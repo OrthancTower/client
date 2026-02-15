@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace OrthancTower\Client\Commands;
 
-use OrthancTower\Client\Facades\Orthanc;
-
 use Illuminate\Console\Command;
+use OrthancTower\Client\Facades\Orthanc;
 
 class TestConnectionCommand extends Command
 {
@@ -34,6 +33,7 @@ class TestConnectionCommand extends Command
 
         $this->line('Configuration:');
         $this->line('  API URL: '.config('orthanc-client.api_url'));
+
         if ($this->option('show-token-partial')) {
             $token = (string) config('orthanc-client.api_token');
             $masked = strlen($token) > 10
@@ -57,10 +57,13 @@ class TestConnectionCommand extends Command
                 if (! empty($channels) && is_array($channels)) {
                     $this->line('Available channels:');
                     foreach ($channels as $channel) {
-                        $name = is_array($channel) ? ($channel['name'] ?? (string) ($channel['id'] ?? 'unknown')) : (string) $channel;
-                        $levels = is_array($channel) ? ($channel['allowed_levels'] ?? ($channel['levels'] ?? '')) : '';
-                        $this->line($levels ? "  • {$name} ({$levels})" : "  • {$name}");
+                        $name = $this->getChannelName($channel);
+                        $levels = $this->getChannelLevels($channel);
+
+                        $this->line('  • '.$name.($levels ? ' ('.$levels.')' : ''));
                     }
+                } else {
+                    $this->warn('No channels returned from server');
                 }
 
                 return 0;
@@ -74,5 +77,32 @@ class TestConnectionCommand extends Command
 
             return 1;
         }
+    }
+
+    /**
+     * Extract channel name safely.
+     */
+    private function getChannelName($channel): string
+    {
+        if (is_array($channel)) {
+            return $channel['name'] ?? $channel['id'] ?? $channel['channel'] ?? 'unknown';
+        }
+
+        return (string) $channel;
+    }
+
+    /**
+     * Extract allowed levels safely.
+     */
+    private function getChannelLevels($channel): string
+    {
+        if (is_array($channel)) {
+            $levels = $channel['allowed_levels'] ?? $channel['levels'] ?? null;
+            if (is_array($levels) && ! empty($levels)) {
+                return implode(', ', $levels);
+            }
+        }
+
+        return '';
     }
 }
