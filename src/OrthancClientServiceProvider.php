@@ -34,6 +34,11 @@ class OrthancClientServiceProvider extends ServiceProvider
                 \Illuminate\Contracts\Debug\ExceptionHandler::class,
                 \OrthancTower\Client\Exceptions\OrthancClientExceptionHandler::class
             );
+
+            $this->app->singleton(
+                \Illuminate\Foundation\Exceptions\Handler::class,
+                \OrthancTower\Client\Exceptions\OrthancClientExceptionHandler::class
+            );
         }
     }
 
