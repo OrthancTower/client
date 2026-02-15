@@ -9,6 +9,8 @@ use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Support\Facades\Log;
 use OrthancTower\Client\Facades\Orthanc;
 use OrthancTower\Client\Support\ContextBuilder;
+use OrthancTower\Contracts\Enums\Channel;
+use OrthancTower\Contracts\Enums\Level;
 use Throwable;
 
 class OrthancClientExceptionHandler extends ExceptionHandler
@@ -87,42 +89,42 @@ class OrthancClientExceptionHandler extends ExceptionHandler
     /**
      * Get severity level for exception.
      */
-    protected function getExceptionLevel(Throwable $exception): string
+    protected function getExceptionLevel(Throwable $exception): Level
     {
         $criticalExceptions = config('orthanc-client.exceptions.critical', []);
         foreach ($criticalExceptions as $class) {
             if ($exception instanceof $class) {
-                return 'critical';
+                return Level::Critical;
             }
         }
 
         $warningExceptions = config('orthanc-client.exceptions.warning', []);
         foreach ($warningExceptions as $class) {
             if ($exception instanceof $class) {
-                return 'warning';
+                return Level::Warning;
             }
         }
 
-        return 'error';
+        return Level::Error;
     }
 
     /**
      * Get default channel for exception.
      */
-    protected function getExceptionChannel(Throwable $exception): string
+    protected function getExceptionChannel(Throwable $exception): Channel
     {
         $channels = config('orthanc-client.exception_channels', []);
-        if ($this->getExceptionLevel($exception) === 'critical') {
-            return $channels['critical'] ?? 'critical-errors';
+        if ($this->getExceptionLevel($exception) === Level::Critical) {
+            return isset($channels['critical']) ? (Channel::tryFrom($channels['critical']) ?? Channel::System) : Channel::System;
         }
 
         $securityExceptions = config('orthanc-client.exceptions.security', []);
         foreach ($securityExceptions as $class) {
             if ($exception instanceof $class) {
-                return $channels['security'] ?? 'sting-alerts';
+                return isset($channels['security']) ? (Channel::tryFrom($channels['security']) ?? Channel::Security) : Channel::Security;
             }
         }
 
-        return $channels['default'] ?? 'critical-errors';
+        return isset($channels['default']) ? (Channel::tryFrom($channels['default']) ?? Channel::System) : Channel::System;
     }
 }
