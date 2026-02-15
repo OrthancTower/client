@@ -20,8 +20,15 @@
     "php": "^8.2|^8.3",
     "illuminate/support": "^12.0",
     "illuminate/http": "^12.0",
-    "guzzlehttp/guzzle": "^7.8"
+    "guzzlehttp/guzzle": "^7.8",
+    "orthanc-tower/orthanc-contracts": "dev-main"
   },
+  "repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/OrthancTower/contracts"
+    }
+  ],
   "autoload": {
     "psr-4": {
       "OrthancTower\\Client\\": "src/"
