@@ -23,7 +23,7 @@ return [
     */
 
     'api_url' => env('ORTHANC_API_URL'),
-    
+
     'api_token' => env('ORTHANC_API_TOKEN'),
 
     /*
@@ -117,6 +117,19 @@ return [
     */
 
     'auto_report_exceptions' => true,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Override Laravel Exception Handler
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, the package will bind its own exception handler
+    | (OrthancClientExceptionHandler) to automatically report exceptions
+    | without requiring changes to App\Exceptions\Handler.
+    | Disable if your application implements a custom Handler you must keep.
+    |
+    */
+    'override_exception_handler' => env('ORTHANC_CLIENT_OVERRIDE_HANDLER', false),
 
     /*
     |--------------------------------------------------------------------------
