@@ -7,6 +7,9 @@ namespace OrthancTower\Client;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use OrthancTower\Client\Support\ContextBuilder;
+use OrthancTower\Contracts\DTO\NotificationPayload;
+use OrthancTower\Contracts\Enums\Channel;
+use OrthancTower\Contracts\Enums\Level;
 
 class OrthancClient
 {
@@ -22,12 +25,12 @@ class OrthancClient
     /**
      * Send notification to server.
      */
-    public function notify(string $channel, string $level, string $message, array $context = []): bool
+    public function notify(Channel|string $channel, Level|string $level, string $message, array $context = []): bool
     {
         // LOG: Verificar se está habilitado
         Log::debug('Orthanc Client: notify() called', [
-            'channel' => $channel,
-            'level' => $level,
+            'channel' => is_string($channel) ? $channel : $channel->value,
+            'level' => is_string($level) ? $level : $level->value,
             'message' => substr($message, 0, 100),
             'is_enabled' => $this->isEnabled(),
         ]);
@@ -45,12 +48,12 @@ class OrthancClient
         // Build context
         $context = $this->contextBuilder->build($context);
 
-        $payload = [
-            'channel' => $channel,
-            'level' => $level,
-            'message' => $message,
-            'context' => $context,
-        ];
+        $payload = new NotificationPayload(
+            channel: is_string($channel) ? Channel::from($channel) : $channel,
+            level: is_string($level) ? Level::from($level) : $level,
+            message: $message,
+            context: $context,
+        );
 
         // LOG: Verificar se vai enfileirar
         $queueEnabled = config('orthanc-client.queue.enabled', false);
@@ -61,7 +64,7 @@ class OrthancClient
         // Queue or send immediately
         if ($queueEnabled) {
             Log::info('Orthanc Client: dispatching to queue');
-            dispatch(new \OrthancTower\Client\Jobs\SendNotificationJob($payload));
+            dispatch(new \OrthancTower\Client\Jobs\SendNotificationJob($payload->toArray()));
 
             return true;
         }
@@ -74,15 +77,17 @@ class OrthancClient
     /**
      * Send notification immediately.
      */
-    public function sendNow(array $payload): bool
+    public function sendNow(NotificationPayload|array $payload): bool
     {
         Log::info('Orthanc Client: sendNow() called', [
-            'channel' => $payload['channel'] ?? null,
-            'level' => $payload['level'] ?? null,
+            'channel' => $payload instanceof NotificationPayload ? $payload->channel->value : ($payload['channel'] ?? null),
+            'level' => $payload instanceof NotificationPayload ? $payload->level->value : ($payload['level'] ?? null),
         ]);
 
+        $data = $payload instanceof NotificationPayload ? $payload->toArray() : $payload;
+
         try {
-            $response = $this->makeRequest('/api/notify', $payload);
+            $response = $this->makeRequest('/api/notify', $data);
 
             Log::info('Orthanc Client: request completed', [
                 'success' => $response['success'] ?? false,
@@ -96,56 +101,56 @@ class OrthancClient
                 'message' => $e->getMessage(),
             ]);
 
-            return $this->handleFailure($e, $payload);
+            return $this->handleFailure($e, $data);
         }
     }
 
     /**
      * Send critical notification.
      */
-    public function critical(string $channel, string $message, array $context = []): bool
+    public function critical(Channel|string $channel, string $message, array $context = []): bool
     {
-        return $this->notify($channel, 'critical', $message, $context);
+        return $this->notify($channel, Level::Critical, $message, $context);
     }
 
     /**
      * Send error notification.
      */
-    public function error(string $channel, string $message, array $context = []): bool
+    public function error(Channel|string $channel, string $message, array $context = []): bool
     {
-        return $this->notify($channel, 'error', $message, $context);
+        return $this->notify($channel, Level::Error, $message, $context);
     }
 
     /**
      * Send warning notification.
      */
-    public function warning(string $channel, string $message, array $context = []): bool
+    public function warning(Channel|string $channel, string $message, array $context = []): bool
     {
-        return $this->notify($channel, 'warning', $message, $context);
+        return $this->notify($channel, Level::Warning, $message, $context);
     }
 
     /**
      * Send info notification.
      */
-    public function info(string $channel, string $message, array $context = []): bool
+    public function info(Channel|string $channel, string $message, array $context = []): bool
     {
-        return $this->notify($channel, 'info', $message, $context);
+        return $this->notify($channel, Level::Info, $message, $context);
     }
 
     /**
      * Send success notification.
      */
-    public function success(string $channel, string $message, array $context = []): bool
+    public function success(Channel|string $channel, string $message, array $context = []): bool
     {
-        return $this->notify($channel, 'success', $message, $context);
+        return $this->notify($channel, Level::Notice, $message, $context);
     }
 
     /**
      * Send debug notification.
      */
-    public function debug(string $channel, string $message, array $context = []): bool
+    public function debug(Channel|string $channel, string $message, array $context = []): bool
     {
-        return $this->notify($channel, 'debug', $message, $context);
+        return $this->notify($channel, Level::Debug, $message, $context);
     }
 
     /**
