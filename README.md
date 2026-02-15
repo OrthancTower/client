@@ -42,9 +42,26 @@ ORTHANC_API_TOKEN=orthanc_app123_abc...
 # Optional
 ORTHANC_TIMEOUT=10
 ORTHANC_QUEUE_ENABLED=false
+ORTHANC_CLIENT_OVERRIDE_HANDLER=false
 ```
 
-### 4. Update Exception Handler
+Notes:
+
+- API URL should be your server base URL (without “/api”). The client automatically calls “/api/\*” endpoints internally.
+- To enable zero‑config exception auto‑report (without editing Handler), set:
+
+```env
+ORTHANC_CLIENT_OVERRIDE_HANDLER=true
+```
+
+### 4. Exception Handler (two options)
+
+Option A — Zero‑config (recommended for projetos simples):
+
+- Enable in `.env`: `ORTHANC_CLIENT_OVERRIDE_HANDLER=true`
+- The package will bind its own exception handler and auto‑report exceptions.
+
+Option B — Manual (para apps com Handler customizado):
 
 ```php
 // app/Exceptions/Handler.php
@@ -60,9 +77,11 @@ class Handler extends OrthancClientExceptionHandler
 
 ### Guia Completo: Exception Handler
 
-- Estenda `OrthancClientExceptionHandler` para habilitar auto‑reporte.
+- Zero‑config: habilite `ORTHANC_CLIENT_OVERRIDE_HANDLER=true` para auto‑reporte sem editar código.
+- Manual: estenda `OrthancClientExceptionHandler` para habilitar auto‑reporte mantendo seu Handler.
 - Configure no `config/orthanc-client.php`:
   - `auto_report_exceptions` para ativar/desativar.
+  - `override_exception_handler` para ligar/desligar o bind automático do Handler.
   - `ignore_exceptions` para classes a serem ignoradas.
 - Boas práticas:
   - Não lance exceções na rotina de reporte; falhas são logadas localmente.
@@ -359,6 +378,7 @@ ORTHANC_QUEUE_ENABLED=false
 - Laravel 12.x
 
 ## License
+
 Proprietary (OrthancTower Client Proprietary License)
 
 ## Support

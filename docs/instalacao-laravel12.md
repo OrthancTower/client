@@ -33,6 +33,10 @@
 - ORTHANC_API_URL=https://orthanc.seu-dominio.com
 - ORTHANC_API_TOKEN=token_do_servidor
 - (Opcional) ORTHANC_QUEUE_ENABLED=true para uso de fila em produção
+- (Opcional) ORTHANC_CLIENT_OVERRIDE_HANDLER=true para auto‑reporte de exceções sem editar Handler
+
+Observação:
+- A URL da API é a base do servidor (sem “/api”); o client já chama “/api/*” internamente.
 
 ## Validação
 
