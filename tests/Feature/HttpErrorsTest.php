@@ -22,7 +22,7 @@ class HttpErrorsTest extends TestCase
         ]);
 
         Http::fake([
-            'https://orthanc.test/api/v1/notify' => Http::response([], 422),
+            'https://orthanc.test/api/notify' => Http::response([], 422),
         ]);
 
         $this->assertFalse(Orthanc::notify('general', 'info', 'message', []));

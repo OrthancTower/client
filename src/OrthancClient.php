@@ -4,18 +4,19 @@ declare(strict_types=1);
 
 namespace OrthancTower\Client;
 
-use OrthancTower\Client\Support\ContextBuilder;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use OrthancTower\Client\Support\ContextBuilder;
 
 class OrthancClient
 {
     protected ContextBuilder $contextBuilder;
+
     protected $sleeper = null;
 
     public function __construct()
     {
-        $this->contextBuilder = new ContextBuilder();
+        $this->contextBuilder = new ContextBuilder;
     }
 
     /**
@@ -53,7 +54,7 @@ class OrthancClient
     public function sendNow(array $payload): bool
     {
         try {
-            $response = $this->makeRequest('/api/v1/notify', $payload);
+            $response = $this->makeRequest('/api/notify', $payload);
 
             return $response['success'] ?? false;
         } catch (\Throwable $e) {
@@ -115,7 +116,7 @@ class OrthancClient
     public function testConnection(): bool
     {
         try {
-            $response = $this->makeRequest('/api/v1/health', [], 'GET');
+            $response = $this->makeRequest('/api/health', [], 'GET');
 
             if (! is_array($response)) {
                 return false;
@@ -126,6 +127,7 @@ class OrthancClient
             if (($response['success'] ?? null) === true) {
                 return true;
             }
+
             return false;
         } catch (\Throwable $e) {
             return false;
@@ -138,9 +140,10 @@ class OrthancClient
     public function getChannels(): array
     {
         try {
-            $response = $this->makeRequest('/api/v1/channels', [], 'GET');
+            $response = $this->makeRequest('/api/channels', [], 'GET');
 
             $channels = $response['channels'] ?? $response['data'] ?? [];
+
             return is_array($channels) ? $channels : [];
         } catch (\Throwable $e) {
             return [];
@@ -235,6 +238,7 @@ class OrthancClient
         if ($jitter === 'full') {
             return random_int(0, max(1, $exp));
         }
+
         return max(1, $exp);
     }
 
@@ -243,6 +247,7 @@ class OrthancClient
         $fn = $this->sleeper;
         if (is_callable($fn)) {
             $fn(max(0, $ms));
+
             return;
         }
         usleep(max(0, $ms) * 1000);

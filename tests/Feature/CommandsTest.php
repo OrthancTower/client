@@ -17,8 +17,8 @@ class CommandsTest extends TestCase
         ]);
 
         Http::fake([
-            'https://orthanc.test/api/v1/health' => Http::response(['status' => 'ok'], 200),
-            'https://orthanc.test/api/v1/channels' => Http::response(['channels' => [
+            'https://orthanc.test/api/health' => Http::response(['status' => 'ok'], 200),
+            'https://orthanc.test/api/channels' => Http::response(['channels' => [
                 ['name' => 'critical-errors', 'allowed_levels' => 'critical,error'],
                 ['name' => 'general', 'allowed_levels' => 'info,success'],
             ]], 200),

@@ -25,7 +25,7 @@ class RetryAfterTest extends TestCase
         ]);
 
         Http::fake([
-            'https://orthanc.test/api/v1/notify' => Http::sequence()
+            'https://orthanc.test/api/notify' => Http::sequence()
                 ->push([], 429, ['Retry-After' => '1'])
                 ->push(['success' => true], 200),
         ]);

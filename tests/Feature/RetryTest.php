@@ -25,7 +25,7 @@ class RetryTest extends TestCase
         ]);
 
         Http::fake([
-            'https://orthanc.test/api/v1/notify' => Http::sequence()
+            'https://orthanc.test/api/notify' => Http::sequence()
                 ->push([], 500)
                 ->push([], 502)
                 ->push(['success' => true], 200),
@@ -47,7 +47,7 @@ class RetryTest extends TestCase
         ]);
 
         Http::fake([
-            'https://orthanc.test/api/v1/notify' => Http::response([], 500),
+            'https://orthanc.test/api/notify' => Http::response([], 500),
         ]);
 
         $this->assertFalse(Orthanc::notify('general', 'info', 'message', []));
