@@ -21,12 +21,16 @@
     "illuminate/support": "^12.0",
     "illuminate/http": "^12.0",
     "guzzlehttp/guzzle": "^7.8",
-    "orthanc-tower/contracts": "dev-main"
+    "orthanctower/contracts": "dev-main"
   },
   "repositories": [
     {
       "type": "vcs",
       "url": "https://github.com/OrthancTower/contracts"
+    },
+    {
+      "type": "vcs",
+      "url": "https://github.com/OrthancTower/client"
     }
   ],
   "autoload": {
@@ -56,7 +60,7 @@
       }
     }
   },
-  "minimum-stability": "stable",
+  "minimum-stability": "dev",
   "prefer-stable": true,
   "require-dev": {
     "orchestra/testbench": "^10.0",
