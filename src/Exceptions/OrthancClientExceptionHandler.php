@@ -4,19 +4,21 @@ declare(strict_types=1);
 
 namespace OrthancTower\Client\Exceptions;
 
+use Illuminate\Contracts\Container\Container;
+use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Support\Facades\Log;
 use OrthancTower\Client\Facades\Orthanc;
 use OrthancTower\Client\Support\ContextBuilder;
-use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Throwable;
 
 class OrthancClientExceptionHandler extends ExceptionHandler
 {
     protected ContextBuilder $contextBuilder;
 
-    public function __construct($container)
+    public function __construct(Container $container)
     {
         parent::__construct($container);
-        $this->contextBuilder = new ContextBuilder();
+        $this->contextBuilder = new ContextBuilder;
     }
 
     /**
@@ -75,7 +77,7 @@ class OrthancClientExceptionHandler extends ExceptionHandler
             );
         } catch (\Throwable $e) {
             // Don't let Orthanc errors crash the app
-            \Log::error('Orthanc client failed to report exception', [
+            Log::error('Orthanc client failed to report exception', [
                 'error' => $e->getMessage(),
                 'original_exception' => $exception->getMessage(),
             ]);
